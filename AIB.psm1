@@ -89,6 +89,10 @@ function invokeAIB {
         New-AzRoleAssignment -ObjectId $idenityNamePrincipalId -RoleDefinitionName $imageRoleDefName -Scope "/subscriptions/$subscriptionID/resourceGroups/$imageResourceGroup"
     }
 
+    # Shared image gallery
+    $sigGalleryName="SIG"
+    $imageDefName=""
+
     # Additional replication regions
     $replRegion2
 
@@ -114,6 +118,24 @@ function invokeAIB {
     New-AzResourceGroupDeployment -ResourceGroupName $imageResourceGroup -TemplateFile $templateFilePath -api-version "2019-05-001-preview" -imageTemplateName $imageTemplateName -svclocation $location
 
     # Now we build the image
-    Invoke-AzResourceAction -ResourceName $imageTemplateName -ResourceGroupName $imageResourceGroup -ResourceType Microsoft.VirtualMachineImages/imageTemplates -ApiVersion "2019-05-01-preview" -Action Run -Force
-    
+    Invoke-AzResourceAction -ResourceName $imageTemplateName -ResourceGroupName $imageResourceGroup -ResourceType Microsoft.VirtualMachineImages/imageTemplates -ApiVersion "2019-05-01-preview" -Action Run -Force -wait
+
+    # Clean up
+    ## Delete Image Template Artifact
+
+    ### Get ResourceID of the image template
+    $resTemplateId = Get-AzResource -ResourceName $imageTemplateName -ResourceGroupName $imageResourceGroup -ResourceType Microsoft.VirtualMachineImage/imageTemplate -ApiVersion "2019-05-01"
+
+    ### Delete Image Template Artifiact
+    Remove-AzResource -ResourceId $resTemplateId.ResourceId -Force
+
+    # Delete role assignment
+    ## Remove role assignment
+    Remove-AzRoleAssignment -ObjectId $idenityNamePrincipalId -RoleDefinitionName $imageRoleDefName -Scope "/subscriptions/$subscriptionID/resourceGroups/$imageResourceGroup"
+
+    ## Remove definitions
+    Remove-AzRoleDefinition -Name "$identityNamePrincipleId" -Force -Scope "/subscriptions/$subscriptionID/resourceGroups/$imageResourceGroup"
+
+    ## Delete identity
+    Remove-AzUserAssignedIdentity -ResourceGroupName $imageResourceGroup -Name $identityName -Force
 }
