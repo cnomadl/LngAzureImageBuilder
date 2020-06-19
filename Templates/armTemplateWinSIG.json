@@ -41,7 +41,7 @@
 
             "vmProfile": 
                     {
-                    "vmSize": "Standard_D1_v2",
+                    "vmSize": "Standard_d1_v2",
                     "osDiskSizeGB": 127,
                     "vnetconfig": "/subscriptions/<subscriptionID>/resourceGroups/<vnetRgName>/providers/Microsoft.Network/virtualNetworks/<vnetName>/subnets/<subnetName>"
                     },
