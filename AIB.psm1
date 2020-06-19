@@ -40,7 +40,7 @@ function invokeAIB {
 
     $subscriptionID=$currentAzContext.Subscription.Id
 
-    # Image resorce group. Create if it does not exist
+    # Image resource group. Create if it does not exist
     Get-AzResourceGroup -Name $imageResourceGroup -ErrorVariable notPresent -ErrorAction SilentlyContinue
     if (!$notPresent)
     {
@@ -94,7 +94,7 @@ function invokeAIB {
     $imageDefName=""
 
     # Additional replication regions
-    $replRegion2
+    $replRegion2 = ""
 
     # Download and coonfigure the image template
     $templateUrl="https://raw.githubusercontent.com/cnomadl/LngAzureImageBuilder/master/armtemplateWinSIG.json"
