@@ -50,7 +50,7 @@
                 "type": "PlatformImage",
                     "publisher": "MicrosoftWindowsServer",
                     "offer": "WindowsServer",
-                    "sku": "2019-Datacenter",
+                    "sku": "2016-Datacenter",
                     "version": "latest"
                 
             },
@@ -59,20 +59,13 @@
                     {
                         "type": "PowerShell",
                         "name": "setupTestEnvironment",
-                        "scriptUri": "https://raw.githubusercontent.com/cnomadl/PowerShellScripts/master/AIB/buildArtifacts/installTestingFeatures.ps1"
+                        "scriptUri": "https://raw.githubusercontent.com/cnomadl/PowerShellScripts/master/AIB/buildArtifacts/createLabEnvironmentServer.ps1"
                     },
                     {
                         "type": "WindowsRestart",
                         "restartCheckCommand": "echo Azure-Image-Builder-Restarted-the-VM  > c:\\buildArtifacts\\azureImageBuilderRestart.txt",
                         "restartTimeout": "5m"
-                    },
-                    {
-                        "type": "File",
-                        "name": "downloadBuildArtifacts",
-                        "sourceUri": "https://raw.githubusercontent.com/danielsollondon/azvmimagebuilder/master/quickquickstarts/exampleArtifacts/buildArtifacts/index.html",
-                        "destination":"c:\\buildArtifacts\\index.html"
-                    },
-        
+                    },        
                     {
                         "type": "PowerShell",
                         "name": "settingUpMgmtAgtPath",
@@ -80,8 +73,7 @@
                             "mkdir c:\\buildActions",
                             "echo Azure-Image-Builder-Was-Here  > c:\\buildActions\\buildActionsOutput.txt"
                         ]
-                    },
-                        
+                    },                        
                     {
                         "type": "WindowsUpdate",
                         "searchCriteria": "IsInstalled=0",
@@ -101,7 +93,7 @@
                     "runOutputName": "<runOutputName>",
                     "artifactTags": {
                         "source": "azureVmImageBuilder",
-                        "baseosimg": "windows2019"
+                        "baseosimg": "windows2016"
                     },
                     "replicationRegions": [
                       "<region1>",
