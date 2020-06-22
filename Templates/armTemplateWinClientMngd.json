@@ -35,7 +35,7 @@
             "properties": {
                 "buildTimeoutInMinutes": 100,
                 "vmProfile": {
-                    "vmSize": "Standard_D2s_v3",
+                    "vmSize": "Standard_B1ms",
                     "osDiskSizeGB": 127
                 },
                 "source": {
@@ -69,7 +69,7 @@
                 "distribute": [
                     {
                         "type": "ManagedImage",
-                        "galleryImageId": "/subscriptions/<subscriptionID>/resourceGroups/<rgName>/providers/Microsoft.Compute/images/<imageName>",
+                        "ImageId": "/subscriptions/<subscriptionID>/resourceGroups/<rgName>/providers/Microsoft.Compute/images/<imageName>",
                         "location": "<region>",
                         "runOutputName": "<runOutputName>",
                         "artifactTags": {
