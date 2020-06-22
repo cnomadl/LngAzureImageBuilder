@@ -46,11 +46,13 @@ function invoke-AibManagedImage {
 
     ## User identity. Create if the identity does not exist.
     # Setup role def name. this needs to be unique
-    $timeInt=$(Get-Date -UFormat "ddMMYY")
+    $timeInt=$(Get-Date -Format "ddMMyy")
     $imageRoleDefName="Azure Image Builder Image Def"+$timeInt
     $identityName="aibIdentity"+$timeInt
     
-    Install-Module -Name Az.ManagedServiceIdentity
+    ## Add AZ PS module to support AzUserAssignedIdentity
+    Install-Module -Name Az.ManagedServiceIdentity -Force
+    Import-Module -Name Az.ManagedServiceIdentity -Force 
 
 
     # Check if the identity exists
@@ -84,7 +86,7 @@ function invoke-AibManagedImage {
     }
 
     # Download and configure the image template
-    $templateUrl="https://raw.githubusercontent.com/cnomadl/LngAzureImageBuilder/master/armTemplateWinServerMngd.json"
+    $templateUrl="https://raw.githubusercontent.com/cnomadl/LngAzureImageBuilder/master/Templates/armTemplateWinServerMngd.json"
     $templateFilePath = "armTemplateWinServerMngd.json"
 
     Invoke-WebRequest -Uri $templateUrl -OutFile $templateFilePath -UseBasicParsing
@@ -100,13 +102,13 @@ function invoke-AibManagedImage {
     New-AzResourceGroupDeployment -ResourceGroupName $imageResourceGroup -TemplateFile $templateFilePath -api-version "2019-05-01-preview" -imageTemplateName $imageTemplateName -svclocation $location
 
     # Now we build the image
-    Invoke-AzResourceAction -ResourceName $imageTemplateName -ResourceGroupName $imageResourceGroup -ResourceType Microsoft.VirtualMachineImages/imageTemplates -ApiVersion "2019-05-01-preview" -Action Run -Force -wait
+    Invoke-AzResourceAction -ResourceName $imageTemplateName -ResourceGroupName $imageResourceGroup -ResourceType Microsoft.VirtualMachineImages/imageTemplates -ApiVersion "2019-05-01-preview" -Action Run -Force
 
     # Clean up
     ## Delete Image Template Artifact
 
     ### Get ResourceID of the image template
-    $resTemplateId = Get-AzResource -ResourceName $imageTemplateName -ResourceGroupName $imageResourceGroup -ResourceType Microsoft.VirtualMachineImage/imageTemplate -ApiVersion "2019-05-01"
+    $resTemplateId = Get-AzResource -ResourceName $imageTemplateName -ResourceGroupName $imageResourceGroup -ResourceType Microsoft.VirtualMachineImages/imageTemplates -ApiVersion "2019-05-01-preview"
 
     ### Delete Image Template Artifiact
     Remove-AzResource -ResourceId $resTemplateId.ResourceId -Force
