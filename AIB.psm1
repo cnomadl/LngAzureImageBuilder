@@ -1,16 +1,16 @@
-function invokeAIB {
+function invoke-AIB {
     param (
         [cmdletbinding()]      
         
         # Destination image resource group
-        [Parameter(Mandatory)]
-        [string]
-        $imageResourceGroup,
+        #[Parameter(Mandatory)]
+        #[string]
+        #$imageResourceGroup,
 
-        # Location used for replication and the resource group
-        [Parameter(Mandatory)]
-        [string]
-        $location,        
+        # Location used for the resource group
+        #[Parameter(Mandatory)]
+        #[string]
+        #$location,        
         
         # Name of the image to be created
         [Parameter(Mandatory)]
@@ -40,6 +40,9 @@ function invokeAIB {
 
     $subscriptionID=$currentAzContext.Subscription.Id
 
+    $imageResourceGroup = "BalticImagesRg"
+    $location = "uk west"
+
     # Image resource group. Create if it does not exist
     Get-AzResourceGroup -Name $imageResourceGroup -ErrorVariable notPresent -ErrorAction SilentlyContinue
     if (!$notPresent)
@@ -52,7 +55,7 @@ function invokeAIB {
 
     ## User identity. Create if the identity does not exist.
     # Setup role def name. this needs to be unique
-    $timeInt=$(Get-Date -UFormat "%s")
+    #$timeInt=$(Get-Date -UFormat "ddMMYY")
     $imageRoleDefName="Azure Image Builder Image Def"
     $identityName="aibIdentity"
     
@@ -90,13 +93,14 @@ function invokeAIB {
     }
 
     # Shared image gallery
-    $sigGalleryName="SIG"
-    $imageDefName=""
+    $sigGalleryName = "SIG"
+    $imageDefName = ""
 
     # Additional replication regions
-    $replRegion2 = ""
+    $replRegion1 = "uk west"
+    $replRegion2 = "uk south"
 
-    # Download and coonfigure the image template
+    # Download and configure the image template
     $templateUrl="https://raw.githubusercontent.com/cnomadl/LngAzureImageBuilder/master/armtemplateWinSIG.json"
     $templateFilePath = "armTemplateWinSIG.json"
 
@@ -109,7 +113,7 @@ function invokeAIB {
 
     ((Get-Content -path $templateFilePath -Raw) -replace '<imageDefName>',$imageDefName) | Set-Content -Path $templateFilePath
     ((Get-Content -path $templateFilePath -Raw) -replace '<sharedImageGalName>',$sigGalleryName) | Set-Content -Path $templateFilePath
-    ((Get-Content -path $templateFilePath -Raw) -replace '<region1>',$location) | Set-Content -Path $templateFilePath
+    ((Get-Content -path $templateFilePath -Raw) -replace '<region1>',$replRegion1) | Set-Content -Path $templateFilePath
     ((Get-Content -path $templateFilePath -Raw) -replace '<region2>',$replRegion2) | Set-Content -Path $templateFilePath
 
     ((Get-Content -path $templateFilePath -Raw) -replace '<imgBuilderId>',$idenityNameResourceId) | Set-Content -Path $templateFilePath
