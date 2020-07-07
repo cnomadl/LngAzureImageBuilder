@@ -30,8 +30,10 @@ function invoke-AibManagedImage {
 
     $subscriptionID=$currentAzContext.Subscription.Id
 
+    $svclocation = "northeurope"
+
     $imageResourceGroup = "BalticImagesRg"
-    $location = "uk west"
+    $location = "ukwest"
     $runOutputName = $imageName+'RO'
 
     # Image resource group. Create if it does not exist
@@ -46,13 +48,13 @@ function invoke-AibManagedImage {
 
     ## User identity. Create if the identity does not exist.
     # Setup role def name. this needs to be unique
-    $timeInt=$(Get-Date -Format "ddMMyy")
-    $imageRoleDefName="Azure Image Builder Image Def"+$timeInt
-    $identityName="aibIdentity"+$timeInt
+    #[int]$timeInt=$(Get-Date -Format "ddMMyy")
+    $imageRoleDefName="Azure Image Builder Image Definition"
+    $identityName="aibIdentity"
     
     ## Add AZ PS module to support AzUserAssignedIdentity
-    Install-Module -Name Az.ManagedServiceIdentity -Force
-    Import-Module -Name Az.ManagedServiceIdentity -Force 
+    Install-Module -Name Az.ManagedServiceIdentity
+    #Import-Module -Name Az.ManagedServiceIdentity 
 
 
     # Check if the identity exists
@@ -64,12 +66,12 @@ function invoke-AibManagedImage {
         Write-Information -MessageData "Creating new user identity $identityName" -InformationAction Continue
         New-AzUserAssignedIdentity -ResourceGroupName $imageResourceGroup -Name $identityName
 
-        $idenityNameResourceId=$(Get-AzUserAssignedIdentity -ResourceGroupName $imageResourceGroup -Name $idenityName).Id
-        $idenityNamePrincipalId=$(Get-AzUserAssignedIdentity -ResourceGroupName $imageResourceGroup -Name $idenityName).PrincipalId
+        $identityNameResourceId=$(Get-AzUserAssignedIdentity -ResourceGroupName $imageResourceGroup -Name $identityName).Id
+        $identityNamePrincipalId=$(Get-AzUserAssignedIdentity -ResourceGroupName $imageResourceGroup -Name $identityName).PrincipalId
         
         #Assign permissions for the identity to distribute images
         $aibRoleImageCreationUrl="https://raw.githubusercontent.com/cnomadl/LngAzureImageBuilder/master/AIB_Security_Roles/aibRoleImageCreation.json"
-        $aibRoleImageCreationPath = "aibRoleImageCreation.json"
+        $aibRoleImageCreationPath = "$env:TEMP\aibRoleImageCreation.json"
 
         # Download config file
         Invoke-WebRequest -Uri $aibRoleImageCreationUrl -OutFile $aibRoleImageCreationPath -UseBasicParsing
@@ -79,15 +81,16 @@ function invoke-AibManagedImage {
         ((Get-Content -path $aibRoleImageCreationPath -Raw) -replace 'Azure Image Builder Service Image Creation Role', $imageRoleDefName) | Set-Content -Path $aibRoleImageCreationPath
 
         # Create the role definition
-        New-AzRoleDefinition -InputFile  ./aibRoleImageCreation.json
+        #New-AzRoleDefinition -InputFile  ./aibRoleImageCreation.json
+        New-AzRoleDefinition -InputFile  $aibRoleImageCreationPath
 
         # Grant role definition to image builder service principle
-        New-AzRoleAssignment -ObjectId $idenityNamePrincipalId -RoleDefinitionName $imageRoleDefName -Scope "/subscriptions/$subscriptionID/resourceGroups/$imageResourceGroup"
+        New-AzRoleAssignment -ObjectId $identityNamePrincipalId -RoleDefinitionName $imageRoleDefName -Scope "/subscriptions/$subscriptionID/resourceGroups/$imageResourceGroup"
     }
 
     # Download and configure the image template
-    $templateUrl="https://raw.githubusercontent.com/cnomadl/LngAzureImageBuilder/master/Templates/armTemplateWinServerMngd.json"
-    $templateFilePath = "armTemplateWinServerMngd.json"
+    $templateUrl="https://raw.githubusercontent.com/cnomadl/LngAzureImageBuilder/master/Templates/armTemplateWinServerMngdDev.json"
+    $templateFilePath = "$env:TEMP\armTemplateWinServerMngd.json"
 
     Invoke-WebRequest -Uri $templateUrl -OutFile $templateFilePath -UseBasicParsing
 
@@ -96,10 +99,10 @@ function invoke-AibManagedImage {
     ((Get-Content -path $templateFilePath -Raw) -replace '<region>',$location) | Set-Content -Path $templateFilePath
     ((Get-Content -path $templateFilePath -Raw) -replace '<runOutputName>',$runOutputName) | Set-Content -Path $templateFilePath
     ((Get-Content -path $templateFilePath -Raw) -replace '<imageName>',$imageName) | Set-Content -Path $templateFilePath
-    ((Get-Content -path $templateFilePath -Raw) -replace '<imgBuilderId>',$idenityNameResourceId) | Set-Content -Path $templateFilePath
+    ((Get-Content -path $templateFilePath -Raw) -replace '<imgBuilderId>',$identityNameResourceId) | Set-Content -Path $templateFilePath
 
     # Submit the template for validation, permissions check and staging
-    New-AzResourceGroupDeployment -ResourceGroupName $imageResourceGroup -TemplateFile $templateFilePath -api-version "2019-05-01-preview" -imageTemplateName $imageTemplateName -svclocation $location
+    New-AzResourceGroupDeployment -ResourceGroupName $imageResourceGroup -TemplateFile $templateFilePath -api-version "2019-05-01-preview" -imageTemplateName $imageTemplateName -svclocation $svclocation
 
     # Now we build the image
     Invoke-AzResourceAction -ResourceName $imageTemplateName -ResourceGroupName $imageResourceGroup -ResourceType Microsoft.VirtualMachineImages/imageTemplates -ApiVersion "2019-05-01-preview" -Action Run -Force
@@ -115,7 +118,7 @@ function invoke-AibManagedImage {
 
     # Delete role assignment
     ## Remove role assignment
-    Remove-AzRoleAssignment -ObjectId $idenityNamePrincipalId -RoleDefinitionName $imageRoleDefName -Scope "/subscriptions/$subscriptionID/resourceGroups/$imageResourceGroup"
+    Remove-AzRoleAssignment -ObjectId $identityNamePrincipalId -RoleDefinitionName $imageRoleDefName -Scope "/subscriptions/$subscriptionID/resourceGroups/$imageResourceGroup"
 
     ## Remove definitions
     Remove-AzRoleDefinition -Name "$identityNamePrincipleId" -Force -Scope "/subscriptions/$subscriptionID/resourceGroups/$imageResourceGroup"
