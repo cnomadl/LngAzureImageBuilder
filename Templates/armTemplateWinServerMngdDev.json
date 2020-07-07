@@ -7,11 +7,9 @@
         },
         "api-version": {
             "type": "string",
-            "defaultValue": "2020-02-14"
         },
         "svclocation": {
             "type": "string",
-            "defaultValue": "northeurope"
         }
     },
     "variables": {},
