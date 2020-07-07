@@ -1,0 +1,120 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "imageTemplateName": {
+            "type": "string"
+        },
+        "api-version": {
+            "type": "string",
+            "defaultValue": "2020-02-14"
+        },
+        "svclocation": {
+            "type": "string",
+            "defaultValue": "northeurope"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "name": "[parameters('imageTemplateName')]",
+            "type": "Microsoft.VirtualMachineImages/imageTemplates",
+            "apiVersion": "[parameters('api-version')]",
+            "location": "[parameters('svclocation')]",
+            "dependsOn": [],
+            "tags": {
+                "imageBuilderTemplate": "AzureImageBuilderMngd",
+                "userIdentity": "enabled"
+            },
+            "identity": {
+                "type": "UserAssigned",
+                "userAssignedIdentities": {
+                    "<imgBuilderId>": {}
+                }
+            },
+            "properties": {
+                "buildTimeoutInMinutes": 100,
+                "vmProfile": {
+                    "vmSize": "Standard_D2s_v3",
+                    "osDiskSizeGB": 127
+                },
+                "source": {
+                    "type": "PlatformImage",
+                    "publisher": "MicrosoftWindowsServer",
+                    "offer": "WindowsServer",
+                    "sku": "2016-Datacenter",
+                    "version": "latest"
+                },
+                "customize": [
+                    {
+                        "type": "PowerShell",
+                        "name": "setupArtifactPath",
+                        "runElevated": false,
+                        "inline": [
+                            "mkdir c:\\buildArtifacts"
+                        ]
+                    },
+                    {
+                        "type": "PowerShell",
+                        "name": "downloadCreds",
+                        "runElevated": false,
+                        "inline": [
+                            "$filePath= 'buildArtifacts/labEnvironment/server/AzureAppSecret.txt'",
+                            "$outputFilePath= 'C:\\buildArtifacts\\AzureAppSecret.txt'",
+                            "$url = 'https://dev.azure.com/BalticApprenticeship/AzureImagebuilder/_apis/git/repositories/AzureImageBuilder/items?path=$filePath&download=true&api-version=5.0'",
+                            "$result = Invoke-RestMethod -Uri $url -Method Get -ContentType 'application/text' -Headers @{Authorization=('Basic {0}' -f OjN1dG80Z2h5b3NjYmZ6a2F4ejVibndvcjVjNmZ5aXp3Y2FodGpodnh5NHVlbDZudmJoc2E=)} | Out-File $outputFilePath"
+                        ]
+                    },
+                    {
+                        "type": "PowerShell",
+                        "name": "downloadAzPsModules",
+                        "runElevated": false,
+                        "inline": [
+                            "$filePath= 'buildArtifacts/labEnvironment/server/AzModule.zip'",
+                            "$outputFilePath= 'C:\\buildArtifacts\\AzModule.zip'",
+                            "$url = 'https://dev.azure.com/BalticApprenticeship/AzureImagebuilder/_apis/git/repositories/AzureImageBuilder/items?path=$filePath&download=true&api-version=5.0'",
+                            "$result = Invoke-RestMethod -Uri $url -Method Get -ContentType 'application/text' -Headers @{Authorization=('Basic {0}' -f OjN1dG80Z2h5b3NjYmZ6a2F4ejVibndvcjVjNmZ5aXp3Y2FodGpodnh5NHVlbDZudmJoc2E=)} | Out-File $outputFilePath"
+                        ]
+                    },
+                    {
+                        "type": "PowerShell",
+                        "name": "downloadPsLabScript",
+                        "runElevated": false,
+                        "inline": [
+                            "$filePath= 'buildArtifacts/labEnvironment/server/createLabEnvironmentServer.ps1'",
+                            "$outputFilePath= 'C:\\buildArtifacts\\createLabEnvironmentServer.ps1'",
+                            "$url = 'https://dev.azure.com/BalticApprenticeship/AzureImagebuilder/_apis/git/repositories/AzureImageBuilder/items?path=$filePath&download=true&api-version=5.0'",
+                            "$result = Invoke-RestMethod -Uri $url -Method Get -ContentType 'application/text' -Headers @{Authorization=('Basic {0}' -f OjN1dG80Z2h5b3NjYmZ6a2F4ejVibndvcjVjNmZ5aXp3Y2FodGpodnh5NHVlbDZudmJoc2E=)} | Out-File $outputFilePath"
+                        ]
+                    },
+                    {
+                        "type": "PowerShell",
+                        "name": "executePsLabScript",
+                        "runElevated": false,
+                        "inline": [
+                            "cd C:\\buildArtifacts",
+                            ".\\createLabEnvironmentServer.ps1"
+                        ]
+                    },
+                    {
+                        "type": "WindowsRestart",
+                        "restartCheckCommand": "echo Azure-Image-Builder-Restarted-the-VM  > c:\\buildArtifacts\\azureImageBuilderRestart.txt",
+                        "restartTimeout": "5m"
+                    }
+                ],
+                "distribute": [
+                    {
+                        "type": "ManagedImage",
+                        "ImageId": "/subscriptions/<subscriptionID>/resourceGroups/<rgName>/providers/Microsoft.Compute/images/<imageName>",
+                        "location": "<region>",
+                        "runOutputName": "<runOutputName>",
+                        "artifactTags": {
+                            "source": "azureVmImageBuilder",
+                            "baseosimage": "Windows2016"
+                        }
+                    }
+                ]
+            }
+        }
+    ]
+}
