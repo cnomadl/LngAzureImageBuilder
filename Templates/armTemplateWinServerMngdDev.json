@@ -6,10 +6,10 @@
             "type": "string"
         },
         "api-version": {
-            "type": "string",
+            "type": "string"
         },
         "svclocation": {
-            "type": "string",
+            "type": "string"
         }
     },
     "variables": {},
@@ -58,7 +58,7 @@
                         "runElevated": false,
                         "inline": [
                             "$filePath= \\\"buildArtifacts/labEnvironment/server/AzureAppSecret.txt\\\"",
-                            "$outputFilePath= \\\"C:\\buildArtifacts\\AzureAppSecret.txt\\\""
+                            "$outputFilePath= \\\"C:\\buildArtifacts\\AzureAppSecret.txt\\\"",
                             "$url = \\\"https://dev.azure.com/BalticApprenticeship/AzureImagebuilder/_apis/git/repositories/AzureImageBuilder/items?path=$filePath&download=true&api-version=5.0\\\"",
                             "$result = Invoke-RestMethod -Uri $url -Method Get -ContentType \\\"application/text\\\" -Headers @{Authorization=(\\\"Basic {0}\\\" -f \\\"OjN1dG80Z2h5b3NjYmZ6a2F4ejVibndvcjVjNmZ5aXp3Y2FodGpodnh5NHVlbDZudmJoc2E=\\\")} | Out-File $outputFilePath"
                         ]
