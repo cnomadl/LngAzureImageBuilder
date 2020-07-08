@@ -59,7 +59,7 @@
                         "type": "File",
                         "name": "downloadBuildArtifacts",
                         "runElevated": false,
-                        "scriptUri": "https://raw.githubusercontent.com/danielsollondon/azvmimagebuilder/master/quickquickstarts/exampleArtifacts/buildArtifacts/index.html",
+                        "sourceUri": "https://raw.githubusercontent.com/danielsollondon/azvmimagebuilder/master/quickquickstarts/exampleArtifacts/buildArtifacts/index.html",
                         "destination": "c:\\buildArtifacts\\index.html"
                     },
                     {
